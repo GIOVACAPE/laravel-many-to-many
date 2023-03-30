@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Project;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\Tag;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -20,17 +22,33 @@ class ProjectController extends Controller
 
 
         // Per il filtro (aggiungo anche la request nell'index())
-        $filter = $request->query('filter');
+        $status_filter = $request->query('status_filter');
+        $category_filter = $request->query('category_filter');
+
+
+
+
+
         $query = Project::orderby('updated_at', 'DESC');
-        if ($filter) {
-            $value = $filter === 'drafts' ? 0 : 1;
+        if ($status_filter) {
+            $value = $status_filter === 'drafts' ? 0 : 1;
             $query->where('is_published', $value);
         }
+        if ($category_filter) {
+            $query->where('category_id', $category_filter);
+        }
+
+
+
+
+
         $projects = $query->simplePaginate(5);
+        $categories = Category::all();
+
 
         // se importo simplapaginatore devo aggiungerlo anche nel 'routeserviceprovider, nel caso non lo volessi rimarra il 'get'
         // $projects = Project::orderBy('updated_at', 'DESC')->simplePaginate(5);
-        return view('admin.projects.index', compact('projects'));
+        return view('admin.projects.index', compact('projects',  'categories', 'status_filter', 'category_filter'));
     }
 
     /**
@@ -40,7 +58,12 @@ class ProjectController extends Controller
     {
         // passo un project vuoto per 'ingannare' il form
         $project = new Project;
-        return view('admin.projects.create', compact('project'));
+        $categories = Category::orderBy('label')->get();
+        // Con 'select' prendo solo quello che mi serve
+        $tags = Tag::select('id', 'label')->orderBy('id')->get();
+
+
+        return view('admin.projects.create', compact('project', 'categories', 'tags'));
     }
 
     /**
@@ -60,6 +83,8 @@ class ProjectController extends Controller
             'image' => 'nullable|image',
             'url_project' => 'nullable|url',
             'url_generic' => 'nullable|url',
+            'category_id' => 'nullable|exists:categories,id',
+            'tags' => 'nullable|exists:tags,id',
         ], [
             'title.required' => 'Il titolo è obbligatorio',
             'title.unique' => "Esiste già un progetto chiamato $request->title",
@@ -79,6 +104,10 @@ class ProjectController extends Controller
             'image.image' => 'l\'immagine deve essere un file di tipo immagine',
             'url_project.url' => 'il link del progetto deve essere valido',
             'url_generic.url' => 'il link generico deve essere valido',
+            'category_id' => 'Categoria non valida',
+            'tags' => 'i tag selezionati non sono validi',
+
+
 
         ]);
 
@@ -101,6 +130,9 @@ class ProjectController extends Controller
         $project->is_published = Arr::exists($data, 'is_published');
         $project->save();
 
+        // Relaziono il progetto con il-i tag
+        if (Arr::exists($data, 'tags')) $project->tags()->attach($data['tags']);
+
         return to_route('admin.projects.show', $project->id)->with('type', 'success')->with('msg', 'Nuovo incredibile progetto inserito con successo!');
     }
 
@@ -117,7 +149,15 @@ class ProjectController extends Controller
      */
     public function edit(Project $project)
     {
-        return view('admin.projects.edit', compact('project'));
+        $categories = Category::orderBy('label')->get();
+        $tags = Tag::select('id', 'label')->orderBy('id')->get();
+
+        // aggiungo anhe questa per ottenere [1, 6]
+        $project_tags = $project->tags->pluck('id')->toArray();
+
+        // $project->tags->pluck('id')->toArrey()
+
+        return view('admin.projects.edit', compact('project', 'tags', 'categories', 'project_tags'));
     }
 
     /**
@@ -135,6 +175,10 @@ class ProjectController extends Controller
             'image' => 'nullable|image',
             'url_project' => 'nullable|url',
             'url_generic' => 'nullable|url',
+            'category_id' => 'nullable|exists:categories,id',
+            'tags' => 'nullable|exists:tags,id',
+
+
         ], [
             'title.required' => 'Il titolo è obbligatorio',
             'title.unique' => "Esiste già un progetto chiamato $request->title",
@@ -154,6 +198,10 @@ class ProjectController extends Controller
             'image.image' => 'l\'immagine deve essere un file di tipo immagine',
             'url_project.url' => 'il link del progetto deve essere valido',
             'url_generic.url' => 'il link generico deve essere valido',
+            'category_id' => 'Categoria non valida',
+            'tags' => 'i tag selezionati non sono validi',
+
+
 
         ]);
 
@@ -169,6 +217,14 @@ class ProjectController extends Controller
 
         $data['is_published'] = Arr::exists($data, 'is_published');
         $project->update($data);
+
+
+        // Assegno i tags
+        if (Arr::exists($data, 'tags')) $project->tags()->sync($data['tags']);
+        else   if (count($project->tags)) $project->tags()->detach();
+
+
+
         return to_route('admin.projects.show', $project->id)->with('type', 'success')->with('msg', 'Questo fantastico progetto è stato modificato con successo!');
     }
 
@@ -179,6 +235,9 @@ class ProjectController extends Controller
     {
         // eliminare l'immagine se no rimane in memoria
         if ($project->image) Storage::delete($project->image);
+
+        // tags
+        if (count($project->tags)) $project->tags()->detach();
 
         $project->delete();
         return to_route('admin.projects.index')->with('type', 'danger')->with('msg', "il progetto '$project->title' è stato eliminato con successo");

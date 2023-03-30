@@ -32,7 +32,7 @@ Route::middleware(['auth', 'verified'])->name('admin.')->prefix('/admin')->group
     // Rotte delle mie categorie
     Route::resource('categories', CategoryController::class);
 
-    // ! Rotta per i toggle
+    // ! Rotta per i toggle 
     Route::patch('/projects/{project}/toggle', [ProjectController::class, 'toggle'])->name('projects.toggle');
 });
 
@@ -49,3 +49,5 @@ Route::middleware('auth')->name('profile.')->prefix('/profile')->group(function 
 });
 
 require __DIR__ . '/auth.php';
+
+Route::resource('admin/tags', App\Http\Controllers\Admin\TagController::class, ['as' => 'admin']);

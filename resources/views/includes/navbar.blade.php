@@ -1,10 +1,10 @@
-<nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm">
+<nav class="navbar navbar-expand-md navbar-dark bg-dark shadow-sm ">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
             <div class="logo_laravel d-flex align-items-center">
                 <img src="{{ asset('images/cloud.png') }}" alt="" width="50" height="50"
                     class="rounded-5 mx-1">
-                Boolfolio di gc
+                Boolfolio di GC
             </div>
             {{-- config('app.name', 'Laravel') --}}
         </a>
@@ -72,3 +72,4 @@
         </div>
     </div>
 </nav>
+

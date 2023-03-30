@@ -18,6 +18,7 @@
                     @if ($project->image)
                         <div class="col-3">
                             <img class="img-fluid" src="{{ asset('storage/' . $project->image) }}" alt="{{ $project->title }}">
+                            
                         </div>
                     @endif
                 </div>
