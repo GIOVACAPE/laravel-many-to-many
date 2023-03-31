@@ -12,4 +12,11 @@ LAVORI FATTI:
 - divido la parte User(admin) e project
 - ATTENZIONE alle REQUEST
 
--FINISCO IL TUTTO CON LA PARTE DI FRONTEND
+----------------------------
+-AGGIUNTO  i rappotyi one to many e many to many con le categorie e le tecnologie (due opzioni da aggiungere ai post pubblicati sul boolfolio)
+
+
+
+
+-FINISCO IL TUTTO CON LA PARTE DI FRONTEND ----------> da sistemare il lato Guest e la sezione project in admin. (31.03.2023)
+
